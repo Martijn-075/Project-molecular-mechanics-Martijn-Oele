@@ -3,7 +3,7 @@ use atom_module
 implicit none
 
 private
-public stretch_energy, bending_energy, van_der_waals_energy
+public stretch_energy, bending_energy, van_der_waals_energy, electrostatic_energy
 
 integer, parameter :: realkind = 8
 ! Stretching parameters
@@ -16,6 +16,10 @@ real(realkind), parameter :: k_CC_CC = 40.0
 real(realkind), parameter :: k_CC_CH = 50.0
 real(realkind), parameter :: k_CH_CH = 35.0
 real(realkind), parameter :: theta_0_SP3 = 109.50
+! Electrostatic parameters
+real(realkind), parameter :: q_H = 0.078
+real(realkind), parameter :: q_C = -0.344
+real(realkind), parameter :: coulombe_constant = 331.1908 !! Needs to be checked 2.146639897e16, eV*A/e2 converted to kcal/mol
 ! Van der waals parameters
 real(realkind), parameter :: A_vdw_HH = 0.0157 * (2 * 1.4870)**12
 real(realkind), parameter :: B_vdw_HH = 0.0157 * (2 * 1.4870)**6
@@ -100,5 +104,30 @@ E = E_sum
 end function van_der_waals_energy
 
 
+real(realkind) function electrostatic_energy(mol) result(E)
+type (molecule), intent(inout) :: mol
+real(realkind) :: E_electrostatic, E_sum
+integer :: i, j
+
+E_sum = 0.
+
+do i = 1, size(mol%distance, 1) - 1
+    do j = i + 1, size(mol%distance, 1)
+        if (mol%bonding(j,i)) cycle
+
+        if (mol%atoms(j)%element == 'H' .and. mol%atoms(i)%element == 'H') then
+            E_electrostatic = ((q_H * q_H) / mol%distance(j,i)) * coulombe_constant
+        else if (mol%atoms(j)%element == 'C' .and. mol%atoms(i)%element == 'C') then
+            E_electrostatic = ((q_C * q_C) / mol%distance(j,i)) * coulombe_constant
+        else 
+            E_electrostatic = ((q_H * q_C) / mol%distance(j,i)) * coulombe_constant
+        end if
+        E_sum = E_sum + E_electrostatic
+    enddo
+enddo
+
+E = E_sum
+
+end function electrostatic_energy
 
 end module
