@@ -3,19 +3,26 @@ use atom_module
 implicit none
 
 private
-public stretch_energy, bending_energy
+public stretch_energy, bending_energy, van_der_waals_energy
 
 integer, parameter :: realkind = 8
+! Stretching parameters
 real(realkind), parameter :: k_CC = 310.
 real(realkind), parameter :: k_CH = 340.
 real(realkind), parameter :: R_CC = 1.526
 real(realkind), parameter :: R_CH = 1.090
-
+! Bending parameters
 real(realkind), parameter :: k_CC_CC = 40.0
 real(realkind), parameter :: k_CC_CH = 50.0
 real(realkind), parameter :: k_CH_CH = 35.0
 real(realkind), parameter :: theta_0_SP3 = 109.50
-
+! Van der waals parameters
+real(realkind), parameter :: A_vdw_HH = 0.0157 * (2 * 1.4870)**12
+real(realkind), parameter :: B_vdw_HH = 0.0157 * (2 * 1.4870)**6
+real(realkind), parameter :: A_vdw_CH = sqrt(0.0157 * 0.1094) * (1.4870 + 1.9080)**12
+real(realkind), parameter :: B_vdw_CH = sqrt(0.0157 * 0.1094) * (1.4870 + 1.9080)**6
+real(realkind), parameter :: A_vdw_CC = 0.1094 * (2 * 1.9080)**12
+real(realkind), parameter :: B_vdw_CC = 0.1094 * (2 * 1.9080)**6
 
 contains
 
@@ -63,6 +70,34 @@ enddo
 E = E_sum
 
 end function bending_energy
+
+
+
+real(realkind) function van_der_waals_energy(mol) result(E)
+type (molecule), intent(inout) :: mol
+real(realkind) :: E_non_bonding, E_sum
+integer :: i, j
+
+E_sum = 0.
+
+do i = 1, size(mol%distance, 1) - 1
+    do j = i + 1, size(mol%distance, 1)
+        if (mol%bonding(j,i)) cycle
+
+        if (mol%atoms(j)%element == 'H' .and. mol%atoms(i)%element == 'H') then
+            E_non_bonding = (A_vdw_HH / mol%distance(j,i)**12) - (B_vdw_HH / mol%distance(j,i)**6)
+        else if (mol%atoms(j)%element == 'C' .and. mol%atoms(i)%element == 'C') then
+            E_non_bonding = (A_vdw_CC / mol%distance(j,i)**12) - (B_vdw_CC / mol%distance(j,i)**6)
+        else 
+            E_non_bonding = (A_vdw_CH / mol%distance(j,i)**12) - (B_vdw_CH / mol%distance(j,i)**6)
+        end if
+        E_sum = E_sum + E_non_bonding
+    enddo
+enddo
+
+E = E_sum
+
+end function van_der_waals_energy
 
 
 
