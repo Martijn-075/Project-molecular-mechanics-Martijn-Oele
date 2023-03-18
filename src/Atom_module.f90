@@ -32,11 +32,14 @@ integer :: atom_indicies(3) = 0
 real(realkind) :: angle = 0.
 end type
 
+
+
 type molecule
 type (atom), allocatable :: atoms(:)
 type (bond), allocatable :: bonds(:)
 type (bond_angle), allocatable :: angles(:)
 real(realkind), allocatable :: distance(:,:)
+logical, allocatable :: bonding(:,:)
 end type
 
 
@@ -101,9 +104,14 @@ type (molecule) :: mol
 integer :: i, j, k
 real(realkind) :: CC, CH
 
-allocate(mol%bonds(size(mol%atoms) - 1))
+!! Originaly used size - 1 but to keep competibility with cyclo compounds removed no known bugs
+allocate(mol%bonds(size(mol%atoms)))
+
 
 allocate(mol%distance(size(mol%atoms), size(mol%atoms)))
+mol%distance = 0.
+allocate(mol%bonding(size(mol%atoms), size(mol%atoms)))
+mol%bonding = .false.
 
 do i = 1, size(mol%atoms)
     do j = 1,size(mol%atoms)
@@ -121,13 +129,15 @@ do i = 1, size(mol%atoms) - 1
         if (mol%atoms(i)%element == 'C' .and. mol%atoms(j)%element == 'C' .and. abs(CC - mol%distance(i,j)) < 0.1) then
             mol%bonds(k)%link(1) = i
             mol%bonds(k)%link(2) = j
-            mol%bonds(k)%length = mol%distance(i,j)
+            mol%bonds(k)%length = mol%distance(j,i)
+            mol%bonding(j,i) = .true.
             mol%bonds(k)%type = 'CC'
             k = k + 1
         else if (mol%atoms(i)%element == 'C' .and. mol%atoms(j)%element == 'H' .and. abs(CH - mol%distance(i,j)) < 0.1) then
             mol%bonds(k)%link(1) = i
             mol%bonds(k)%link(2) = j
-            mol%bonds(k)%length = mol%distance(i,j)
+            mol%bonds(k)%length = mol%distance(j,i)
+            mol%bonding(j,i) = .true.
             mol%bonds(k)%type = 'CH'
             k = k + 1
         end if
