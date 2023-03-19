@@ -21,13 +21,15 @@ integer :: link(2) = 0
 character(2) :: type = 'EE'
 ! Setting the calculated distance of the bond in A
 real(realkind) :: length = 0.
+real(realkind) :: vector(3) = 0.
 end type
 
 type bond_angle
 ! Setting the types of bonds over which the angle is calulated
 character(2) :: bonds(2) = (/'EE', 'EE'/)
-! Setting the indicies of the atoms over wich the angle is calcualted
-integer :: atom_indicies(3) = 0
+integer :: atoms_indicies(3)
+real(realkind) :: bonds_vector(3,2) = 0.
+real(realkind) :: bonds_length(2) = 0.
 ! The actual angle of the bonds
 real(realkind) :: angle = 0.
 end type
@@ -113,6 +115,7 @@ mol%distance = 0.
 allocate(mol%bonding(size(mol%atoms), size(mol%atoms)))
 mol%bonding = .false.
 
+!! Can be optimized
 do i = 1, size(mol%atoms)
     do j = 1,size(mol%atoms)
         mol%distance(i,j) = sqrt((mol%atoms(i)%cords(1) - mol%atoms(j)%cords(1))**2 + &
@@ -130,6 +133,7 @@ do i = 1, size(mol%atoms) - 1
             mol%bonds(k)%link(1) = i
             mol%bonds(k)%link(2) = j
             mol%bonds(k)%length = mol%distance(j,i)
+            mol%bonds(k)%vector = mol%atoms(i)%cords - mol%atoms(j)%cords
             mol%bonding(j,i) = .true.
             mol%bonds(k)%type = 'CC'
             k = k + 1
@@ -137,6 +141,7 @@ do i = 1, size(mol%atoms) - 1
             mol%bonds(k)%link(1) = i
             mol%bonds(k)%link(2) = j
             mol%bonds(k)%length = mol%distance(j,i)
+            mol%bonds(k)%vector = mol%atoms(i)%cords - mol%atoms(j)%cords
             mol%bonding(j,i) = .true.
             mol%bonds(k)%type = 'CH'
             k = k + 1
@@ -180,34 +185,27 @@ end do
 
 
 k = 1
-do l = 1,size(bonds_holder, 2)
+do l = 1,size(carbon_indicies)
     do i = 1,3
         do j = i + 1,4
             mol%angles(k)%bonds(1) = bonds_holder(i,l)%type
             mol%angles(k)%bonds(2) = bonds_holder(j,l)%type
 
-            if (bonds_holder(i,l)%link(1) == bonds_holder(j,l)%link(1)) then
-                mol%angles(k)%atom_indicies(1) = bonds_holder(i,l)%link(2)
-                mol%angles(k)%atom_indicies(2) = bonds_holder(i,l)%link(1)
-                mol%angles(k)%atom_indicies(3) = bonds_holder(j,l)%link(2)
-            else if (bonds_holder(i,l)%link(1) == bonds_holder(j,l)%link(2)) then
-                mol%angles(k)%atom_indicies(1) = bonds_holder(i,l)%link(2)
-                mol%angles(k)%atom_indicies(2) = bonds_holder(i,l)%link(1)
-                mol%angles(k)%atom_indicies(3) = bonds_holder(j,l)%link(1)
-            else if (bonds_holder(i,l)%link(2) == bonds_holder(j,l)%link(1)) then
-                mol%angles(k)%atom_indicies(1) = bonds_holder(i,l)%link(1)
-                mol%angles(k)%atom_indicies(2) = bonds_holder(i,l)%link(2)
-                mol%angles(k)%atom_indicies(3) = bonds_holder(j,l)%link(2)
-            else
-                mol%angles(k)%atom_indicies(1) = bonds_holder(i,l)%link(1)
-                mol%angles(k)%atom_indicies(2) = bonds_holder(i,l)%link(2)
-                mol%angles(k)%atom_indicies(3) = bonds_holder(j,l)%link(1)
-           end if
+            mol%angles(k)%atoms_indicies(1) = bonds_holder(i,l)%link(2)
+            mol%angles(k)%atoms_indicies(2) = bonds_holder(i,l)%link(1)
+            mol%angles(k)%atoms_indicies(3) = bonds_holder(j,l)%link(2)
 
-            A = mol%distance(mol%angles(k)%atom_indicies(1), mol%angles(k)%atom_indicies(2))
-            B = mol%distance(mol%angles(k)%atom_indicies(2), mol%angles(k)%atom_indicies(3))
-            C = mol%distance(mol%angles(k)%atom_indicies(1), mol%angles(k)%atom_indicies(3))
-            mol%angles(k)%angle =rad_to_deg(acos((A**2 + B**2 - C**2) / (2 * A * B)))
+            mol%angles(k)%bonds_vector(:,1) = bonds_holder(i,l)%vector
+            mol%angles(k)%bonds_vector(:,2) = bonds_holder(j,l)%vector
+
+            mol%angles(k)%bonds_length(1) = bonds_holder(i,l)%length
+            mol%angles(k)%bonds_length(2) = bonds_holder(j,l)%length
+
+            mol%angles(k)%angle = rad_to_deg(acos(dot_product(mol%angles(k)%bonds_vector(:,1), mol%angles(k)%bonds_vector(:,2)) &
+            / (mol%angles(k)%bonds_length(1) * mol%angles(k)%bonds_length(2))))
+
+            if (mol%angles(k)%angle <= 90.) mol%angles(k)%angle = 180.0 - mol%angles(k)%angle
+
             k = k + 1
         enddo
     enddo
