@@ -1,21 +1,38 @@
 program main
 use atom_module
+use energy_module
+use deg_rad
 implicit none
-type(atom), allocatable :: atoms(:)
-type (bond), allocatable :: bonds(:)
-integer i
+
+type (molecule) :: mol
+integer i, j
 
 
-call read_atom(atoms, 'c4h10.xyz')
 
-call bonds_atom(atoms, bonds)
+call read_atom(mol, 'c4h10.xyz')
+
+call print_atom(mol%atoms)
+
+call bonds_atom(mol)
+
+call angle_bonds(mol)
 
 
-call print_atom(atoms)
-
-do i = 1,size(bonds)
-    print *, bonds(i)%link(1), bonds(i)%link(2), bonds(i)%length, bonds(i)%type
-    
+do i = 1,size(mol%bonds)
+    print *, mol%bonds(i)
 enddo
+
+print *, 'Stretch energy: ', stretch_energy(mol)
+
+print *, 'Bending energy: ', bending_energy(mol)
+
+print *, 'Van der waals: ', van_der_waals_energy(mol)
+
+print *, 'Electrostatic: ', electrostatic_energy(mol)
+
+do i = 1,size(mol%angles)
+    print *, mol%angles(i)%bonds, mol%angles(i)%atoms_indicies, mol%angles(i)%angle
+enddo
+
 
 end program

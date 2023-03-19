@@ -156,7 +156,6 @@ end subroutine bonds_atom
 subroutine angle_bonds(mol)
 type (molecule) :: mol
 type (bond) :: bonds_holder(4,count(mol%atoms%element == 'C'))
-real(realkind) :: A, B, C
 integer :: carbon_indicies(count(mol%atoms%element == 'C'))
 integer :: n, i, j, k, l
 
