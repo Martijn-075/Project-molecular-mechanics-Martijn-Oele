@@ -5,7 +5,7 @@ implicit none
 integer, parameter :: realkind = 8
 
 private
-public atom, bond, bond_angle, molecule, read_atom, write_atom, print_atom, bonds_atom, angle_bonds, angle_torsion
+public atom, bond, bond_angle, molecule, read_atom, write_atom, print_atom, create_molecule, delete_molecule
 
 type atom
 ! Setting the element in this project only C (carbon) or H (hydrogen)
@@ -52,6 +52,29 @@ end type
 
 
 contains
+
+
+subroutine create_molecule(mol)
+type (molecule), intent(inout) :: mol
+
+call bonds_atom(mol)
+call angle_bonds(mol)
+call angle_torsion(mol)
+
+end subroutine create_molecule
+
+
+subroutine delete_molecule(mol)
+type (molecule), intent(inout) :: mol
+
+if (count(mol%bonds%type == 'CC') > 0) deallocate(mol%torsion_angles)
+
+deallocate(mol%bonds)
+deallocate(mol%bonding)
+deallocate(mol%distance)
+deallocate(mol%angles)
+
+end subroutine
 
 
 subroutine read_atom(mol, filename)
@@ -165,9 +188,7 @@ type (bond) :: bonds_holder(4,count(mol%atoms%element == 'C'))
 integer :: carbon_indicies(count(mol%atoms%element == 'C'))
 integer :: n, i, j, k, l
 
-n = count(mol%atoms%element == 'C') * 6
-
-allocate(mol%angles(n))
+allocate(mol%angles(count(mol%atoms%element == 'C') * 6))
 
 k = 1
 do j =1,size(mol%atoms)

@@ -39,10 +39,6 @@ contains
 real(realkind) function forcefield_energy(mol) result(E)
 type (molecule), intent(inout) :: mol
 
-call bonds_atom(mol)
-call angle_bonds(mol)
-call angle_torsion(mol)
-
 E = stretch_energy(mol) + bending_energy(mol) + torsion_energy(mol) + electrostatic_energy(mol) + van_der_waals_energy(mol)
 
 end function
