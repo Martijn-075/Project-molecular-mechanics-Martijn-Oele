@@ -1,9 +1,10 @@
 module energy_module
 use atom_module
+use deg_rad
 implicit none
 
 private
-public stretch_energy, bending_energy, van_der_waals_energy, electrostatic_energy
+public stretch_energy, bending_energy, van_der_waals_energy, electrostatic_energy, torsion_energy, forcefield_energy
 
 integer, parameter :: realkind = 8
 ! Stretching parameters
@@ -27,8 +28,24 @@ real(realkind), parameter :: A_vdw_CH = sqrt(0.0157 * 0.1094) * (1.4870 + 1.9080
 real(realkind), parameter :: B_vdw_CH = sqrt(0.0157 * 0.1094) * (1.4870 + 1.9080)**6
 real(realkind), parameter :: A_vdw_CC = 0.1094 * (2 * 1.9080)**12
 real(realkind), parameter :: B_vdw_CC = 0.1094 * (2 * 1.9080)**6
+! Torsion angle
+real(realkind), parameter :: n_CC = 3.0
+real(realkind), parameter :: V2_CC = 1.40
+real(realkind), parameter :: gamma_CC = 0.
 
 contains
+
+
+real(realkind) function forcefield_energy(mol) result(E)
+type (molecule), intent(inout) :: mol
+
+call bonds_atom(mol)
+call angle_bonds(mol)
+call angle_torsion(mol)
+
+E = stretch_energy(mol) + bending_energy(mol) + torsion_energy(mol) + electrostatic_energy(mol) + van_der_waals_energy(mol)
+
+end function
 
 
 real(realkind) function stretch_energy(mol) result(E)
@@ -60,11 +77,11 @@ integer :: i
 E_sum = 0.
 
 do i = 1, size(mol%angles)
-    if (mol%angles(i)%bonds(1) == 'CH' .and. mol%angles(i)%bonds(2) == 'CH') then
+    if (mol%angles(i)%bonds_type(1) == 'CH' .and. mol%angles(i)%bonds_type(2) == 'CH') then
         E_bend = k_CH_CH * (mol%angles(i)%angle - theta_0_SP3)**2
-    else if (mol%angles(i)%bonds(1) == 'CC' .and. mol%angles(i)%bonds(2) == 'CH') then
+    else if (mol%angles(i)%bonds_type(1) == 'CC' .and. mol%angles(i)%bonds_type(2) == 'CH') then
         E_bend = k_CC_CH * (mol%angles(i)%angle - theta_0_SP3)**2
-    else if (mol%angles(i)%bonds(1) == 'CC' .and. mol%angles(i)%bonds(2) == 'CC') then
+    else if (mol%angles(i)%bonds_type(1) == 'CC' .and. mol%angles(i)%bonds_type(2) == 'CC') then
         E_bend = k_CC_CC * (mol%angles(i)%angle - theta_0_SP3)**2
     end if
 
@@ -74,6 +91,23 @@ enddo
 E = E_sum
 
 end function bending_energy
+
+
+real(realkind) function torsion_energy(mol) result(E)
+type (molecule), intent(inout) :: mol 
+real(realkind) :: E_torsion, E_sum
+integer :: i
+
+E_sum = 0.
+if (count(mol%bonds%type == 'CC') > 0) then
+    do i = 1,size(mol%torsion_angles)
+        E_torsion = V2_CC * (1 + cos(deg_to_rad(n_CC * mol%torsion_angles(i)%angle - gamma_CC)))
+        E_sum = E_sum + E_torsion
+    enddo
+end if
+E = E_sum
+
+end function torsion_energy
 
 
 
