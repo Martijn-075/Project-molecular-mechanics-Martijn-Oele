@@ -5,7 +5,7 @@ implicit none
 integer, parameter :: realkind = 8
 
 private
-public atom, bond, bond_angle, molecule, read_atom, write_atom, print_atom, bonds_atom, angle_bonds
+public atom, bond, bond_angle, molecule, read_atom, write_atom, print_atom, bonds_atom, angle_bonds, angle_torsion
 
 type atom
 ! Setting the element in this project only C (carbon) or H (hydrogen)
@@ -26,11 +26,16 @@ end type
 
 type bond_angle
 ! Setting the types of bonds over which the angle is calulated
-character(2) :: bonds(2) = (/'EE', 'EE'/)
+character(2) :: bonds_type(2) = (/'EE', 'EE'/)
 integer :: atoms_indicies(3)
-real(realkind) :: bonds_vector(3,2) = 0.
-real(realkind) :: bonds_length(2) = 0.
+type (bond) :: bonds(2)
 ! The actual angle of the bonds
+real(realkind) :: angle = 0.
+end type
+
+type torsion
+type (bond) :: end_bonds(2)
+type (bond) :: center_bond
 real(realkind) :: angle = 0.
 end type
 
@@ -40,6 +45,7 @@ type molecule
 type (atom), allocatable :: atoms(:)
 type (bond), allocatable :: bonds(:)
 type (bond_angle), allocatable :: angles(:)
+type (torsion), allocatable :: torsion_angles(:)
 real(realkind), allocatable :: distance(:,:)
 logical, allocatable :: bonding(:,:)
 end type
@@ -187,21 +193,18 @@ k = 1
 do l = 1,size(carbon_indicies)
     do i = 1,3
         do j = i + 1,4
-            mol%angles(k)%bonds(1) = bonds_holder(i,l)%type
-            mol%angles(k)%bonds(2) = bonds_holder(j,l)%type
+            mol%angles(k)%bonds_type(1) = bonds_holder(i,l)%type
+            mol%angles(k)%bonds_type(2) = bonds_holder(j,l)%type
 
             mol%angles(k)%atoms_indicies(1) = bonds_holder(i,l)%link(2)
             mol%angles(k)%atoms_indicies(2) = bonds_holder(i,l)%link(1)
             mol%angles(k)%atoms_indicies(3) = bonds_holder(j,l)%link(2)
 
-            mol%angles(k)%bonds_vector(:,1) = bonds_holder(i,l)%vector
-            mol%angles(k)%bonds_vector(:,2) = bonds_holder(j,l)%vector
+            mol%angles(k)%bonds(1) = bonds_holder(i,l)
+            mol%angles(k)%bonds(2) = bonds_holder(j,l)
 
-            mol%angles(k)%bonds_length(1) = bonds_holder(i,l)%length
-            mol%angles(k)%bonds_length(2) = bonds_holder(j,l)%length
-
-            mol%angles(k)%angle = rad_to_deg(acos(dot_product(mol%angles(k)%bonds_vector(:,1), mol%angles(k)%bonds_vector(:,2)) &
-            / (mol%angles(k)%bonds_length(1) * mol%angles(k)%bonds_length(2))))
+            mol%angles(k)%angle = rad_to_deg(acos(dot_product(mol%angles(k)%bonds(1)%vector, mol%angles(k)%bonds(2)%vector) &
+            / (mol%angles(k)%bonds(1)%length * mol%angles(k)%bonds(2)%length)))
 
             if (mol%angles(k)%angle <= 90.) mol%angles(k)%angle = 180.0 - mol%angles(k)%angle
 
@@ -211,6 +214,70 @@ do l = 1,size(carbon_indicies)
 enddo
 
 end subroutine angle_bonds
+
+
+
+subroutine angle_torsion(mol)
+type (molecule), intent(inout) :: mol
+type (bond), allocatable :: end_bonds_holder(:,:,:), CC_bonds_holder(:)
+real(realkind) :: n1(3), n2(3)
+integer :: i, j, k, l
+if (count(mol%bonds%type == 'CC') > 0) then
+
+allocate(mol%torsion_angles(count(mol%bonds%type == 'CC') * 9))
+allocate(end_bonds_holder(3, 2, count(mol%bonds%type == 'CC')))
+allocate(CC_bonds_holder(count(mol%bonds%type == 'CC')))
+
+k = 1
+do i = 1, size(mol%bonds)
+        if (mol%bonds(i)%type == 'CC') then
+            CC_bonds_holder(k) = mol%bonds(i)
+            k = k + 1
+        end if
+enddo
+
+do i = 1, size(CC_bonds_holder)
+    k = 1
+    l = 1
+    do j = 1,size(mol%bonds)
+        if ((mol%bonds(j)%link(1) == CC_bonds_holder(i)%link(1) .or. mol%bonds(j)%link(2) == CC_bonds_holder(i)%link(1)) .and. &
+        (mol%bonds(j)%vector(1) /= CC_bonds_holder(i)%vector(1) .or. mol%bonds(j)%vector(2) /= CC_bonds_holder(i)%vector(2))) then
+            end_bonds_holder(k,1,i) = mol%bonds(j)
+            k = k + 1
+        end if
+
+        if ((mol%bonds(j)%link(1) == CC_bonds_holder(i)%link(2) .or. mol%bonds(j)%link(2) == CC_bonds_holder(i)%link(2)) .and. &
+        (mol%bonds(j)%vector(1) /= CC_bonds_holder(i)%vector(1) .or. mol%bonds(j)%vector(2) /= CC_bonds_holder(i)%vector(2))) then
+            end_bonds_holder(l,2,i) = mol%bonds(j)
+            l = l + 1
+        end if
+    enddo
+enddo
+
+l = 1
+do i = 1, size(CC_bonds_holder)
+    do j = 1,3
+        do k = 1,3
+            mol%torsion_angles(l)%center_bond = CC_bonds_holder(i)
+
+            mol%torsion_angles(l)%end_bonds(1) = end_bonds_holder(j,1,i)
+            mol%torsion_angles(l)%end_bonds(2) = end_bonds_holder(k,2,i)
+
+            l = l + 1
+        enddo 
+    enddo
+enddo
+
+
+do i = 1, size(mol%torsion_angles)
+    n1 = cross_product(mol%torsion_angles(i)%end_bonds(1)%vector, mol%torsion_angles(i)%center_bond%vector)
+    n2 = cross_product(mol%torsion_angles(i)%end_bonds(2)%vector, mol%torsion_angles(i)%center_bond%vector)
+
+    mol%torsion_angles(i)%angle = rad_to_deg(acos(dot_product(n1, n2) / (vector_distance(n1) * vector_distance(n2))))
+enddo
+
+end if
+end subroutine angle_torsion
 
 
 

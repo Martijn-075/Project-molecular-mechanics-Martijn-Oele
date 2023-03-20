@@ -8,7 +8,7 @@ integer, parameter :: realkind = 8
 real(realkind), parameter :: pi = 4.*atan(1.)
 
 private
-public pi, deg_to_rad, rad_to_deg, cross_product
+public pi, deg_to_rad, rad_to_deg, cross_product, vector_distance
 
 
 
@@ -41,5 +41,13 @@ result(2) = vec1(3) * vec2(1) - vec1(1) * vec2(3)
 result(3) = vec1(1) * vec2(2) - vec1(2) * vec2(1)
 
 end function 
+
+
+real(realkind) function vector_distance(vector)
+real(realkind), intent(in) :: vector(3)
+
+vector_distance = sqrt(vector(1)**2 + vector(2)**2 + vector(3)**2)
+
+end function
 
 end module
