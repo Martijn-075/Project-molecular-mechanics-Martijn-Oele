@@ -1,6 +1,6 @@
 module energy_module
 use atom_module
-use deg_rad
+use math_module
 implicit none
 
 private
@@ -35,7 +35,7 @@ real(realkind), parameter :: gamma_CC = 0.
 
 contains
 
-
+! The total forcield energy function calling all sub energy functions
 real(realkind) function forcefield_energy(mol) result(E)
 type (molecule), intent(inout) :: mol
 
@@ -43,13 +43,14 @@ E = stretch_energy(mol) + bending_energy(mol) + torsion_energy(mol) + electrosta
 
 end function
 
-
+! The strech energy function. The bonds_angle subroutine must be called before this function
 real(realkind) function stretch_energy(mol) result(E)
 type (molecule) :: mol
 real(realkind) :: E_bond, E_sum
 integer :: i
 E_sum = 0.
 
+! Calculating the strech energy for every bond based on the bond type
 do i = 1,size(mol%bonds) - count(mol%bonds%type == 'EE')
     if (mol%bonds(i)%type == 'CC') then
         E_bond = k_CC * (mol%bonds(i)%length - R_CC)**2
@@ -63,8 +64,7 @@ E = E_sum
 
 end function stretch_energy
 
-
-
+! Calculating the bending energy for all conecting bonds
 real(realkind) function bending_energy(mol) result(E)
 type(molecule) :: mol
 real(realkind) :: E_bend, E_sum
@@ -72,13 +72,14 @@ integer :: i
 
 E_sum = 0.
 
+! Calculating the bending energy based on the two bond types
 do i = 1, size(mol%angles)
-    if (mol%angles(i)%bonds_type(1) == 'CH' .and. mol%angles(i)%bonds_type(2) == 'CH') then
+    if (mol%angles(i)%bonds(1)%type == 'CH' .and. mol%angles(i)%bonds(2)%type == 'CH') then
         E_bend = k_CH_CH * (mol%angles(i)%angle - theta_0_SP3)**2
-    else if (mol%angles(i)%bonds_type(1) == 'CC' .and. mol%angles(i)%bonds_type(2) == 'CH') then
-        E_bend = k_CC_CH * (mol%angles(i)%angle - theta_0_SP3)**2
-    else if (mol%angles(i)%bonds_type(1) == 'CC' .and. mol%angles(i)%bonds_type(2) == 'CC') then
+    else if (mol%angles(i)%bonds(1)%type == 'CC' .and. mol%angles(i)%bonds(2)%type == 'CC') then
         E_bend = k_CC_CC * (mol%angles(i)%angle - theta_0_SP3)**2
+    else if (mol%angles(i)%bonds(1)%type == 'CC' .and. mol%angles(i)%bonds(2)%type == 'CH') then
+        E_bend = k_CC_CH * (mol%angles(i)%angle - theta_0_SP3)**2
     end if
 
     E_sum = E_sum + E_bend
@@ -88,13 +89,14 @@ E = E_sum
 
 end function bending_energy
 
-
+! Calcualting the torsion energy. There must be an CC bond else the torsion energy = 0.0
 real(realkind) function torsion_energy(mol) result(E)
 type (molecule), intent(inout) :: mol 
 real(realkind) :: E_torsion, E_sum
 integer :: i
 
 E_sum = 0.
+! Checking if there is a CC bond that can function as a centeral bond
 if (count(mol%bonds%type == 'CC') > 0) then
     do i = 1,size(mol%torsion_angles)
         E_torsion = V2_CC * (1 + cos(deg_to_rad(n_CC * mol%torsion_angles(i)%angle - gamma_CC)))
@@ -105,8 +107,7 @@ E = E_sum
 
 end function torsion_energy
 
-
-
+! Calculating the non bonding van der waals energy
 real(realkind) function van_der_waals_energy(mol) result(E)
 type (molecule), intent(inout) :: mol
 real(realkind) :: E_non_bonding, E_sum
@@ -114,6 +115,7 @@ integer :: i, j
 
 E_sum = 0.
 
+! Calcualting the nonbonding van der waals energy based on the two interacting atoms
 do i = 1, size(mol%distance, 1) - 1
     do j = i + 1, size(mol%distance, 1)
         if (mol%bonding(j,i)) cycle
@@ -133,7 +135,7 @@ E = E_sum
 
 end function van_der_waals_energy
 
-
+! Calcualting the nonbonding electrastatic energy
 real(realkind) function electrostatic_energy(mol) result(E)
 type (molecule), intent(inout) :: mol
 real(realkind) :: E_electrostatic, E_sum
@@ -141,6 +143,7 @@ integer :: i, j
 
 E_sum = 0.
 
+! Calcualting the electrastatic energy based on the two interacting atoms
 do i = 1, size(mol%distance, 1) - 1
     do j = i + 1, size(mol%distance, 1)
         if (mol%bonding(j,i)) cycle

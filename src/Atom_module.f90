@@ -1,59 +1,67 @@
 module atom_module
-use deg_rad
+use math_module
 implicit none
 
 integer, parameter :: realkind = 8
 
 private
-public atom, bond, bond_angle, molecule, read_atom, write_atom, print_atom, create_molecule, delete_molecule
+public atom, bond, bond_angle, molecule, read_atom, write_atom, create_molecule, delete_molecule
 
 type atom
-! Setting the element in this project only C (carbon) or H (hydrogen)
+! The element of the atom (in this project only C (carbon) or H (hydrogen))
 character(1) :: element = 'E'
 ! The xyz coordinates of the atom in the molecule
 real(realkind) :: cords(3) = 0.
 end type
 
 type bond
-! Setting the indices of the atoms that are bonding
+! The indices of the atoms that are bonding
 integer :: link(2) = 0
-! Setting the type of bond in this project only CC or CH
+! The type of bond in this project only CC or CH
 character(2) :: type = 'EE'
-! Setting the calculated distance of the bond in A
+! The calculated distance of the bond in (A) angstrom 
 real(realkind) :: length = 0.
+! the vecotr of the bond (3D)
 real(realkind) :: vector(3) = 0.
 end type
 
 type bond_angle
-! Setting the types of bonds over which the angle is calulated
-character(2) :: bonds_type(2) = (/'EE', 'EE'/)
-integer :: atoms_indicies(3)
+! The bonds that have an angle
 type (bond) :: bonds(2)
-! The actual angle of the bonds
+! The angle of the bonds
 real(realkind) :: angle = 0.
 end type
 
 type torsion
+! The bonds at the ends (1 and 3) that make the angle
 type (bond) :: end_bonds(2)
+! The central bond that conect the end bonds. In this project always a CC bond
 type (bond) :: center_bond
+! The angle the end bonds make acourding to the newman projection
 real(realkind) :: angle = 0.
 end type
 
 
 
 type molecule
+! The atoms in the molecule
 type (atom), allocatable :: atoms(:)
+! The bonds in the molecule
 type (bond), allocatable :: bonds(:)
+! The angles between the bonds in the molecule
 type (bond_angle), allocatable :: angles(:)
+! The torsion angles in the molecule
 type (torsion), allocatable :: torsion_angles(:)
+! The distances between all atoms in the molecule
 real(realkind), allocatable :: distance(:,:)
+! Suporting the distance array and holds if two molecules are form a bond
 logical, allocatable :: bonding(:,:)
 end type
 
 
 contains
 
-
+! Create a molecule after it is read in. This is needed before the forcefield energy function can be called
 subroutine create_molecule(mol)
 type (molecule), intent(inout) :: mol
 
@@ -63,7 +71,7 @@ call angle_torsion(mol)
 
 end subroutine create_molecule
 
-
+! Deallocate everything from the molecule except the atoms. Neededd to recreate the molecule after the atoms are changed
 subroutine delete_molecule(mol)
 type (molecule), intent(inout) :: mol
 
@@ -76,7 +84,7 @@ deallocate(mol%angles)
 
 end subroutine
 
-
+! Read in the atom information from an xyz file
 subroutine read_atom(mol, filename)
 type (molecule) :: mol
 character(len=*), intent(in) :: filename
@@ -98,8 +106,7 @@ close(iu)
 
 end subroutine read_atom
 
-
-
+! Writes the atoms information to a xyz file
 subroutine write_atom(mol, filename)
 type (molecule) :: mol
 character(len=*), intent(in) :: filename
@@ -116,26 +123,12 @@ enddo
 close(iu)
 end subroutine
 
-
-
-subroutine print_atom(atoms)
-type (atom) :: atoms(:)
-integer :: i
-
-do i = 1,size(atoms)
-    print *, i, atoms(i)
-enddo
-
-end subroutine print_atom
-
-
-
+! Establishes the bonds between atoms based on distance
 subroutine bonds_atom(mol)
 type (molecule) :: mol
 integer :: i, j, k
 real(realkind) :: CC, CH
 
-!! Originaly used size - 1 but to keep competibility with cyclo compounds removed no known bugs
 allocate(mol%bonds(size(mol%atoms)))
 
 
@@ -144,17 +137,19 @@ mol%distance = 0.
 allocate(mol%bonding(size(mol%atoms), size(mol%atoms)))
 mol%bonding = .false.
 
-!! Can be optimized
+! Creates the distnace array which is used for cheking if atoms are bonded but also for nonbonding interactions 
 do i = 1, size(mol%atoms)
-    do j = 1,size(mol%atoms)
-        mol%distance(i,j) = sqrt((mol%atoms(i)%cords(1) - mol%atoms(j)%cords(1))**2 + &
+    do j = 1, size(mol%atoms)
+        mol%distance(j,i) = sqrt((mol%atoms(i)%cords(1) - mol%atoms(j)%cords(1))**2 + &
         (mol%atoms(i)%cords(2) - mol%atoms(j)%cords(2))**2 + (mol%atoms(i)%cords(3) - mol%atoms(j)%cords(3))**2)
     enddo
 enddo
 
+!! is a constant
 CC = 1.535
 CH = 1.094
 
+! Checking if atoms are bonding
 k = 1
 do i = 1, size(mol%atoms) - 1
     do j = i + 1, size(mol%atoms)
@@ -180,16 +175,16 @@ enddo
 
 end subroutine bonds_atom
 
-
-
+! Calculating the angels between neighboring bonds (in this project must be an carbon atom) 
 subroutine angle_bonds(mol)
 type (molecule) :: mol
 type (bond) :: bonds_holder(4,count(mol%atoms%element == 'C'))
 integer :: carbon_indicies(count(mol%atoms%element == 'C'))
-integer :: n, i, j, k, l
+integer :: i, j, k, l
 
 allocate(mol%angles(count(mol%atoms%element == 'C') * 6))
 
+! Getting the atom indicies of the carbon atoms (is the center atom to which the two bonds tha make an angle are conected)
 k = 1
 do j =1,size(mol%atoms)
     if (mol%atoms(j)%element == 'C') then
@@ -198,7 +193,7 @@ do j =1,size(mol%atoms)
     end if
 enddo
 
-
+! Puts for every carbon atom the 4 bonds that are conected to that atom in an bonds holder array
 do i = 1, size(carbon_indicies)
     k = 1
     do j = 1,size(mol%bonds)
@@ -209,18 +204,11 @@ do i = 1, size(carbon_indicies)
     enddo
 end do
 
-
+! Creates (6) unique paires of 2 bonds for each carbon atom (4 bonds) and calculates the angle between them using vectors
 k = 1
 do l = 1,size(carbon_indicies)
     do i = 1,3
         do j = i + 1,4
-            mol%angles(k)%bonds_type(1) = bonds_holder(i,l)%type
-            mol%angles(k)%bonds_type(2) = bonds_holder(j,l)%type
-
-            mol%angles(k)%atoms_indicies(1) = bonds_holder(i,l)%link(2)
-            mol%angles(k)%atoms_indicies(2) = bonds_holder(i,l)%link(1)
-            mol%angles(k)%atoms_indicies(3) = bonds_holder(j,l)%link(2)
-
             mol%angles(k)%bonds(1) = bonds_holder(i,l)
             mol%angles(k)%bonds(2) = bonds_holder(j,l)
 
@@ -236,19 +224,21 @@ enddo
 
 end subroutine angle_bonds
 
-
-
+! Calculating the torsion angles. In this project the center bond must be an CC
 subroutine angle_torsion(mol)
 type (molecule), intent(inout) :: mol
 type (bond), allocatable :: end_bonds_holder(:,:,:), CC_bonds_holder(:)
 real(realkind) :: n1(3), n2(3)
 integer :: i, j, k, l
+
+! If there are 0 bonds over which an torsion angle can be calcualted the subroutine is skipped
 if (count(mol%bonds%type == 'CC') > 0) then
 
 allocate(mol%torsion_angles(count(mol%bonds%type == 'CC') * 9))
 allocate(end_bonds_holder(3, 2, count(mol%bonds%type == 'CC')))
 allocate(CC_bonds_holder(count(mol%bonds%type == 'CC')))
 
+! Extracting all the CC (center) bonds
 k = 1
 do i = 1, size(mol%bonds)
         if (mol%bonds(i)%type == 'CC') then
@@ -257,6 +247,7 @@ do i = 1, size(mol%bonds)
         end if
 enddo
 
+! Getting all the the (2 x 3) (end) bonds of the CC bond per C atom
 do i = 1, size(CC_bonds_holder)
     k = 1
     l = 1
@@ -275,6 +266,7 @@ do i = 1, size(CC_bonds_holder)
     enddo
 enddo
 
+! Makking (9) unique end bonds pairs
 l = 1
 do i = 1, size(CC_bonds_holder)
     do j = 1,3
@@ -289,17 +281,15 @@ do i = 1, size(CC_bonds_holder)
     enddo
 enddo
 
-
+! Calcualting the angle according to the newman projection 
 do i = 1, size(mol%torsion_angles)
     n1 = cross_product(mol%torsion_angles(i)%end_bonds(1)%vector, mol%torsion_angles(i)%center_bond%vector)
     n2 = cross_product(mol%torsion_angles(i)%end_bonds(2)%vector, mol%torsion_angles(i)%center_bond%vector)
 
-    mol%torsion_angles(i)%angle = rad_to_deg(acos(dot_product(n1, n2) / (vector_distance(n1) * vector_distance(n2))))
+    mol%torsion_angles(i)%angle = rad_to_deg(acos(dot_product(n1, n2) / (vector_lenght(n1) * vector_lenght(n2))))
 enddo
 
 end if
 end subroutine angle_torsion
-
-
 
 end module
