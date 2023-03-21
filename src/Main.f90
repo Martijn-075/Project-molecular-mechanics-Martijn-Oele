@@ -1,12 +1,16 @@
+!
+! Author: Martijn Oele (GitHub: Martijn-075)
+!
 program main
-use atom_module
+use molecule_module
 use energy_module
 use metropolis_module
+use constant_module
 implicit none
 
 type (molecule) :: mol
 
-call read_atom(mol, 'c4h10.xyz')
+call read_atom(mol, 'c6h12.xyz')
 
 
 call metropolis(mol)

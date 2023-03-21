@@ -1,37 +1,17 @@
+!
+! Module contianing the energy functions (bonding and nonbonding) to calculate the molecular forcefield energy
+! Author: Martijn Oele (GitHub: Martijn-075)
+!
 module energy_module
-use atom_module
+use molecule_module
 use math_module
+use constant_module
 implicit none
 
 private
 public stretch_energy, bending_energy, van_der_waals_energy, electrostatic_energy, torsion_energy, forcefield_energy
 
-integer, parameter :: realkind = 8
-! Stretching parameters
-real(realkind), parameter :: k_CC = 310.
-real(realkind), parameter :: k_CH = 340.
-real(realkind), parameter :: R_CC = 1.526
-real(realkind), parameter :: R_CH = 1.090
-! Bending parameters
-real(realkind), parameter :: k_CC_CC = 40.0
-real(realkind), parameter :: k_CC_CH = 50.0
-real(realkind), parameter :: k_CH_CH = 35.0
-real(realkind), parameter :: theta_0_SP3 = 109.50
-! Electrostatic parameters
-real(realkind), parameter :: q_H = 0.078
-real(realkind), parameter :: q_C = -0.344
-real(realkind), parameter :: coulombe_constant = 331.1908 !! Needs to be checked 2.146639897e16, eV*A/e2 converted to kcal/mol
-! Van der waals parameters
-real(realkind), parameter :: A_vdw_HH = 0.0157 * (2 * 1.4870)**12
-real(realkind), parameter :: B_vdw_HH = 0.0157 * (2 * 1.4870)**6
-real(realkind), parameter :: A_vdw_CH = sqrt(0.0157 * 0.1094) * (1.4870 + 1.9080)**12
-real(realkind), parameter :: B_vdw_CH = sqrt(0.0157 * 0.1094) * (1.4870 + 1.9080)**6
-real(realkind), parameter :: A_vdw_CC = 0.1094 * (2 * 1.9080)**12
-real(realkind), parameter :: B_vdw_CC = 0.1094 * (2 * 1.9080)**6
-! Torsion angle
-real(realkind), parameter :: n_CC = 3.0
-real(realkind), parameter :: V2_CC = 1.40
-real(realkind), parameter :: gamma_CC = 0.
+
 
 contains
 

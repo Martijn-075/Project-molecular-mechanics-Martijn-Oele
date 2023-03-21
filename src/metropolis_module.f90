@@ -1,13 +1,12 @@
 !
-!
+! Module containing the metropolis algorithm to minimize the energy of a molecular conformation  
 ! Author: Martijn Oele (GitHub: Martijn-075)
 !
 module metropolis_module
 use molecule_module
 use energy_module
+use constant_module
 implicit none
-
-integer, parameter :: realkind = 8
 
 private
 public random_atom_metropolis, metropolis

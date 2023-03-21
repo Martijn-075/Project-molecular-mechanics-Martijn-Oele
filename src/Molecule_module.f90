@@ -1,13 +1,12 @@
 !
 ! Molecule module!
-! Contains the data types and subroutines for creating an molecule from atoms inclusing the bonds, bond angles and torsion angles
+! Module containing the data types and subroutines for creating an molecule from atoms inclusing the bonds, bond angles and torsion angles
 ! Author: Martijn Oele (GitHub: Martijn-075)
 !
  module molecule_module
 use math_module
+use constant_module
 implicit none
-
-integer, parameter :: realkind = 8
 
 private
 public atom, bond, bond_angle, molecule, read_atom, write_atom, create_molecule, delete_molecule
@@ -132,7 +131,6 @@ end subroutine
 subroutine bonds_atom(mol)
 type (molecule) :: mol
 integer :: i, j, k
-real(realkind) :: CC, CH
 
 allocate(mol%bonds(size(mol%atoms)))
 
@@ -150,15 +148,13 @@ do i = 1, size(mol%atoms)
     enddo
 enddo
 
-!! is a constant
-CC = 1.535
-CH = 1.094
 
 ! Checking if atoms are bonding
 k = 1
 do i = 1, size(mol%atoms) - 1
     do j = i + 1, size(mol%atoms)
-        if (mol%atoms(i)%element == 'C' .and. mol%atoms(j)%element == 'C' .and. abs(CC - mol%distance(i,j)) < 0.1) then
+        if (mol%atoms(i)%element == 'C' .and. mol%atoms(j)%element == 'C' .and. &
+        abs(ideal_CC_length - mol%distance(i,j)) < 0.1) then
             mol%bonds(k)%link(1) = i
             mol%bonds(k)%link(2) = j
             mol%bonds(k)%length = mol%distance(j,i)
@@ -166,7 +162,8 @@ do i = 1, size(mol%atoms) - 1
             mol%bonding(j,i) = .true.
             mol%bonds(k)%type = 'CC'
             k = k + 1
-        else if (mol%atoms(i)%element == 'C' .and. mol%atoms(j)%element == 'H' .and. abs(CH - mol%distance(i,j)) < 0.1) then
+        else if (mol%atoms(i)%element == 'C' .and. mol%atoms(j)%element == 'H' .and. &
+        abs(ideal_CH_length - mol%distance(i,j)) < 0.1) then
             mol%bonds(k)%link(1) = i
             mol%bonds(k)%link(2) = j
             mol%bonds(k)%length = mol%distance(j,i)
