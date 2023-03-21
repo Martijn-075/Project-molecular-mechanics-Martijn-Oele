@@ -1,5 +1,6 @@
 !
-! Module to convert rads to degrees and degrees to rads. pi is also declared and public
+! Module whith suproting math functions including converting rads to degrees and vice versa. Also includes vectro math fucntion to calculate the cross (X) product and the length of a vector
+! Author: Martijn Oele (GitHub: Martijn-075)
 !
 module math_module
 implicit none

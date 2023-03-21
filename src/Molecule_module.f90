@@ -1,4 +1,9 @@
-module atom_module
+!
+! Molecule module!
+! Contains the data types and subroutines for creating an molecule from atoms inclusing the bonds, bond angles and torsion angles
+! Author: Martijn Oele (GitHub: Martijn-075)
+!
+ module molecule_module
 use math_module
 implicit none
 

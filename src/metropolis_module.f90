@@ -1,5 +1,9 @@
+!
+!
+! Author: Martijn Oele (GitHub: Martijn-075)
+!
 module metropolis_module
-use atom_module
+use molecule_module
 use energy_module
 implicit none
 
