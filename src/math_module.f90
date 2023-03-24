@@ -1,15 +1,15 @@
 !
+! Math module
 ! Module whith suproting math functions including converting rads to degrees and vice versa. Also includes vectro math fucntion to calculate the cross (X) product and the length of a vector
 ! Author: Martijn Oele (GitHub: Martijn-075)
 !
 module math_module
+    use constant_module
 implicit none
 
-integer, parameter :: realkind = 8
-real(realkind), parameter :: pi = 4.*atan(1.)
 
 private
-public pi, deg_to_rad, rad_to_deg, cross_product, vector_lenght
+public deg_to_rad, rad_to_deg, cross_product, vector_lenght
 
 
 contains

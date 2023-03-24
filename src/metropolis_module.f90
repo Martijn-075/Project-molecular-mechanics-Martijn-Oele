@@ -1,4 +1,5 @@
 !
+! Metropolis module 
 ! Module containing the metropolis algorithm to minimize the energy of a molecular conformation  
 ! Author: Martijn Oele (GitHub: Martijn-075)
 !
@@ -9,10 +10,8 @@ use constant_module
 implicit none
 
 private
-public random_atom_metropolis, metropolis
+public random_atom_metropolis, metropolis, minimize_energy
 
-real(realkind), parameter :: kb = 1.987204259e-3
-real(realkind), parameter :: T = 293
 
 contains
 
@@ -48,31 +47,40 @@ enddo
 end subroutine random_atom_metropolis
 
 ! The actuale metropolis algorithm to minimize the enrgy by randomly moving the atoms whitin a certain range
-subroutine metropolis(mol)
+subroutine metropolis(mol, T, r)
 type (molecule), intent(inout) :: mol
 type (molecule) :: old_mol
-real(realkind) :: energy, old_energy, delta_energy, starting_energy, P, Pa
+real(realkind) :: energy, old_energy, delta_energy, starting_energy, P, Pa, T_local
+real(realkind), optional :: T, r
 integer :: i
+
+! Checking if T is given by the user
+if (present(T)) then
+    T_local = T
+else 
+    T_local = 293
+end if 
 
 ! Getting the energy of the unchnaged molecule 
 call create_molecule(mol)
 old_energy = forcefield_energy(mol)
 starting_energy = old_energy
 
+!! will be removed
 print *, 'Stretching energy', stretch_energy(mol)
 print *, 'Bending energy', bending_energy(mol)
 print *, 'Torsion energy', torsion_energy(mol)
 print *, 'Electrstatic energy', electrostatic_energy(mol)
 print *, 'Van der waals energy', van_der_waals_energy(mol)
 print *, ''
-
+!!
 ! The metropolis algorithm. If the new cordinates are rejected 1000 times in a row it is assumed that an minimal energy is found
 i = 1
 do while (i < 1000)
     ! Creating a new moelcule with the atoms randomly moved
     old_mol = mol
     call delete_molecule(mol)
-    call random_atom_metropolis(mol)
+    call random_atom_metropolis(mol, r)
     call create_molecule(mol)
     energy = forcefield_energy(mol)
     delta_energy = energy - old_energy
@@ -83,7 +91,7 @@ do while (i < 1000)
         i = 1
     else 
         call random_number(P)
-        Pa = min(1.,exp((-1 * delta_energy) / kb * T))
+        Pa = min(1.,exp((-1 * delta_energy) / kb * T_local))
 
         ! If the energy of the new molecule is higher than that of the old molecule there is still a change that the new molecule is accepted based on the boltzzman distribution
         if (p < Pa) then
@@ -99,11 +107,56 @@ enddo
 
 
 print *, 'Starting energy', starting_energy
-print *, 'minimized energy', energy
+print *, 'Minimized energy', energy
 print *, 'Energy reduced by', energy - starting_energy
 print *, 'Energy reduced %', (energy - starting_energy) / starting_energy * 100
 
 
 end subroutine metropolis
+
+
+subroutine minimize_energy
+type (molecule) :: mol
+character(32) :: filename
+character(1) :: ans
+real(realkind) :: r, T
+
+
+print *, 'File name of the molecule (.xyz)?'
+read (*,*) filename
+    
+call read_atom(mol, filename)
+
+print *, 'Do you want to give custom parameters for r and T? (standard r = 0.001 and T = 293 K)'
+read (*,*) ans
+if (ans == 'y') then
+    print *, 'T?'
+    read (*,*) T
+    print *, 'r?'
+    read (*,*) r
+    call metropolis(mol, T, r)
+else 
+    call metropolis(mol)
+end if
+
+!!
+print *, ""
+print *, 'Stretching energy', stretch_energy(mol)
+print *, 'Bending energy', bending_energy(mol)
+print *, 'Torsion energy', torsion_energy(mol)
+print *, 'Electrstatic energy', electrostatic_energy(mol)
+print *, 'Van der waals energy', van_der_waals_energy(mol)
+!!
+
+print *, 'Do you want to save the minimized energy configuration (y/n)'
+read (*,*) ans
+
+if (ans == 'y') then
+    print *, 'File name(.xyz)?'
+    read (*,*) filename
+    call write_atom(mol, filename)
+end if
+
+end subroutine minimize_energy
 
 end module

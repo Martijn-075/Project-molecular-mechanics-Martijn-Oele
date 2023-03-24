@@ -1,4 +1,5 @@
 !
+! constants module
 ! Module containing all constants (parameters)
 ! Author: Martijn Oele (GitHub: Martijn-075)
 !
@@ -7,7 +8,7 @@ implicit none
 
 public
 
-! The bits for the real numbers (8 = double precision)
+! The bytes for the real numbers (8 = double precision)
 integer, parameter :: realkind = 8
 
 ! Molecule_module
@@ -40,5 +41,11 @@ real(realkind), parameter :: B_vdw_CC = 0.1094 * (2 * 1.9080)**6
 real(realkind), parameter :: n_CC = 3.0
 real(realkind), parameter :: V2_CC = 1.40
 real(realkind), parameter :: gamma_CC = 0.
+
+! Metropolis module
+real(realkind), parameter :: kb = 1.987204259e-3
+
+! Math module
+real(realkind), parameter :: pi = 4.*atan(1.)
 
 end module

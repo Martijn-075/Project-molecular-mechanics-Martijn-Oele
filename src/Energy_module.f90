@@ -1,4 +1,5 @@
 !
+! Energy module
 ! Module contianing the energy functions (bonding and nonbonding) to calculate the molecular forcefield energy
 ! Author: Martijn Oele (GitHub: Martijn-075)
 !
@@ -58,7 +59,7 @@ do i = 1, size(mol%angles)
         E_bend = k_CH_CH * (mol%angles(i)%angle - theta_0_SP3)**2
     else if (mol%angles(i)%bonds(1)%type == 'CC' .and. mol%angles(i)%bonds(2)%type == 'CC') then
         E_bend = k_CC_CC * (mol%angles(i)%angle - theta_0_SP3)**2
-    else if (mol%angles(i)%bonds(1)%type == 'CC' .and. mol%angles(i)%bonds(2)%type == 'CH') then
+    else
         E_bend = k_CC_CH * (mol%angles(i)%angle - theta_0_SP3)**2
     end if
 

@@ -1,5 +1,5 @@
 !
-! Molecule module!
+! Molecule module
 ! Module containing the data types and subroutines for creating an molecule from atoms inclusing the bonds, bond angles and torsion angles
 ! Author: Martijn Oele (GitHub: Martijn-075)
 !
@@ -9,7 +9,7 @@ use constant_module
 implicit none
 
 private
-public atom, bond, bond_angle, molecule, read_atom, write_atom, create_molecule, delete_molecule
+public atom, bond, molecule, read_atom, write_atom, create_molecule, delete_molecule
 
 type atom
 ! The element of the atom (in this project only C (carbon) or H (hydrogen))
@@ -160,6 +160,7 @@ do i = 1, size(mol%atoms) - 1
             mol%bonds(k)%length = mol%distance(j,i)
             mol%bonds(k)%vector = mol%atoms(i)%cords - mol%atoms(j)%cords
             mol%bonding(j,i) = .true.
+            mol%bonding(i,j) = .true.
             mol%bonds(k)%type = 'CC'
             k = k + 1
         else if (mol%atoms(i)%element == 'C' .and. mol%atoms(j)%element == 'H' .and. &
@@ -169,6 +170,7 @@ do i = 1, size(mol%atoms) - 1
             mol%bonds(k)%length = mol%distance(j,i)
             mol%bonds(k)%vector = mol%atoms(i)%cords - mol%atoms(j)%cords
             mol%bonding(j,i) = .true.
+            mol%bonding(i,j) = .true.
             mol%bonds(k)%type = 'CH'
             k = k + 1
         end if
