@@ -96,6 +96,7 @@ integer :: i, j
 
 E_sum = 0.
 
+!! Chek if a radius of arround 8 to 9 A will make the electroastic resanble energys for nrormal qolumbe constant 
 ! Calcualting the nonbonding van der waals energy based on the two interacting atoms
 do i = 1, size(mol%distance, 1) - 1
     do j = i + 1, size(mol%distance, 1)

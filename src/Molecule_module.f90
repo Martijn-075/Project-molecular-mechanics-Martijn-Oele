@@ -239,6 +239,7 @@ integer :: i, j, k, l
 if (count(mol%bonds%type == 'CC') > 0) then
 
 allocate(mol%torsion_angles(count(mol%bonds%type == 'CC') * 9))
+!! look intyo allocating at beggining 
 allocate(end_bonds_holder(3, 2, count(mol%bonds%type == 'CC')))
 allocate(CC_bonds_holder(count(mol%bonds%type == 'CC')))
 
@@ -256,6 +257,7 @@ do i = 1, size(CC_bonds_holder)
     k = 1
     l = 1
     do j = 1,size(mol%bonds)
+        !! can be optimised
         if ((mol%bonds(j)%link(1) == CC_bonds_holder(i)%link(1) .or. mol%bonds(j)%link(2) == CC_bonds_holder(i)%link(1)) .and. &
         (mol%bonds(j)%vector(1) /= CC_bonds_holder(i)%vector(1) .or. mol%bonds(j)%vector(2) /= CC_bonds_holder(i)%vector(2))) then
             end_bonds_holder(k,1,i) = mol%bonds(j)
