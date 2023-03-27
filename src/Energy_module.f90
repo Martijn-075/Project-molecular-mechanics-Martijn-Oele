@@ -96,11 +96,11 @@ integer :: i, j
 
 E_sum = 0.
 
-!! Chek if a radius of arround 8 to 9 A will make the electroastic resanble energys for nrormal qolumbe constant 
 ! Calcualting the nonbonding van der waals energy based on the two interacting atoms
+! Only non bonding atoms at least 4.5 A (3 CC bonds) and not further than 9 A are taken into account
 do i = 1, size(mol%distance, 1) - 1
     do j = i + 1, size(mol%distance, 1)
-        if (mol%bonding(j,i)) cycle
+        if (mol%bonding(j,i) .or. mol%distance(j,i) < 4.5 .or. mol%distance(j,i) > 9) cycle
 
         if (mol%atoms(j)%element == 'H' .and. mol%atoms(i)%element == 'H') then
             E_non_bonding = (A_vdw_HH / mol%distance(j,i)**12) - (B_vdw_HH / mol%distance(j,i)**6)
@@ -126,9 +126,10 @@ integer :: i, j
 E_sum = 0.
 
 ! Calcualting the electrastatic energy based on the two interacting atoms
+! Only non bonding atoms at least 4.5 A (3 CC bonds) and not further than 9 A are taken into account
 do i = 1, size(mol%distance, 1) - 1
     do j = i + 1, size(mol%distance, 1)
-        if (mol%bonding(j,i)) cycle
+        if (mol%bonding(j,i) .or. mol%distance(j,i) < 4.5 .or. mol%distance(j,i) > 9) cycle
 
         if (mol%atoms(j)%element == 'H' .and. mol%atoms(i)%element == 'H') then
             E_electrostatic = ((q_H * q_H) / mol%distance(j,i)) * coulombe_constant

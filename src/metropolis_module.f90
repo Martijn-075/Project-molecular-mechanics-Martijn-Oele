@@ -27,7 +27,7 @@ integer :: i
 if (present(r)) then
     r_local = r
 else 
-    r_local = 0.001
+    r_local = 0.0001
 end if
 
 
@@ -111,7 +111,6 @@ print *, 'Minimized energy', energy
 print *, 'Energy reduced by', energy - starting_energy
 print *, 'Energy reduced %', (energy - starting_energy) / starting_energy * 100
 
-
 end subroutine metropolis
 
 
@@ -127,7 +126,7 @@ read (*,*) filename
     
 call read_atom(mol, filename)
 
-print *, 'Do you want to give custom parameters for r and T? (standard r = 0.001 and T = 293 K)'
+print *, 'Do you want to give custom parameters for r and T? (standard r = 0.0001 and T = 293 K)'
 read (*,*) ans
 if (ans == 'y') then
     print *, 'T?'

@@ -29,14 +29,14 @@ real(realkind), parameter :: theta_0_SP3 = 109.50
 ! Electrostatic parameters
 real(realkind), parameter :: q_H = 0.078
 real(realkind), parameter :: q_C = -0.344
-real(realkind), parameter :: coulombe_constant = 331.1908 !! Needs to be checked 2.146639897e16, eV*A/e2 converted to kcal/mol
+real(realkind), parameter :: coulombe_constant = 0.6246348496 !! converted from n m**2 / C**2 to A Kcal / mol C**2
 ! Van der waals parameters
 real(realkind), parameter :: A_vdw_HH = 0.0157 * (2 * 1.4870)**12
-real(realkind), parameter :: B_vdw_HH = 0.0157 * (2 * 1.4870)**6
+real(realkind), parameter :: B_vdw_HH = 2. * 0.0157 * (2 * 1.4870)**6
 real(realkind), parameter :: A_vdw_CH = sqrt(0.0157 * 0.1094) * (1.4870 + 1.9080)**12
-real(realkind), parameter :: B_vdw_CH = sqrt(0.0157 * 0.1094) * (1.4870 + 1.9080)**6
+real(realkind), parameter :: B_vdw_CH = 2. * sqrt(0.0157 * 0.1094) * (1.4870 + 1.9080)**6
 real(realkind), parameter :: A_vdw_CC = 0.1094 * (2 * 1.9080)**12
-real(realkind), parameter :: B_vdw_CC = 0.1094 * (2 * 1.9080)**6
+real(realkind), parameter :: B_vdw_CC = 2. * 0.1094 * (2 * 1.9080)**6
 ! Torsion angle
 real(realkind), parameter :: n_CC = 3.0
 real(realkind), parameter :: V2_CC = 1.40
