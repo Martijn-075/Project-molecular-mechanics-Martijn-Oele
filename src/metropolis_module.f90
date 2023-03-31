@@ -52,7 +52,7 @@ type (molecule), intent(inout) :: mol
 type (molecule) :: old_mol
 real(realkind) :: energy, old_energy, delta_energy, starting_energy, P, Pa, T_local
 real(realkind), optional :: T, r
-integer :: i
+integer :: i, j, k
 
 ! Checking if T is given by the user
 if (present(T)) then
@@ -66,16 +66,10 @@ call create_molecule(mol)
 old_energy = forcefield_energy(mol)
 starting_energy = old_energy
 
-!! will be removed
-print *, 'Stretching energy', stretch_energy(mol)
-print *, 'Bending energy', bending_energy(mol)
-print *, 'Torsion energy', torsion_energy(mol)
-print *, 'Electrstatic energy', electrostatic_energy(mol)
-print *, 'Van der waals energy', van_der_waals_energy(mol)
-print *, ''
-!!
 ! The metropolis algorithm. If the new cordinates are rejected 1000 times in a row it is assumed that an minimal energy is found
-i = 1
+i = 0
+j = 0
+k = 0
 do while (i < 1000)
     ! Creating a new moelcule with the atoms randomly moved
     old_mol = mol
@@ -97,19 +91,31 @@ do while (i < 1000)
         if (p < Pa) then
             old_energy = energy
             i = 1
+            k = k + 1
         else
             mol = old_mol
             energy = old_energy
             i = i + 1
         end if
     end if
+
+    ! If not converged whitin 1.000.000
+    if (j > 1000000) then
+        print *, 'Not converged within 1.000.000 iterations. Try making r bigger and/or T lower'
+    end if
+    j = j + 1
+
 enddo
 
+mol%minimized_energy = energy
 
-print *, 'Starting energy', starting_energy
-print *, 'Minimized energy', energy
-print *, 'Energy reduced by', energy - starting_energy
-print *, 'Energy reduced %', (energy - starting_energy) / starting_energy * 100
+print '(a,x,es12.6,a)', 'Starting energy:', starting_energy, ' kcal/mol'
+print '(a,x,es12.6,a)', 'Minimized energy:', energy, ' kcal/mol'
+print '(a,x,es13.6,a)', 'Energy reduced by:', energy - starting_energy, ' kcal/mol'
+print '(a,x,f5.1,a)', 'Energy reduced %:', (energy - starting_energy) / starting_energy * 100, '%'
+print '(a,x,i5)', 'Number of iterations:', j
+print '(a,x,i1)', 'Number of acceptance with higer energy:', k
+
 
 end subroutine metropolis
 
@@ -138,14 +144,6 @@ else
     call metropolis(mol)
 end if
 
-!!
-print *, ""
-print *, 'Stretching energy', stretch_energy(mol)
-print *, 'Bending energy', bending_energy(mol)
-print *, 'Torsion energy', torsion_energy(mol)
-print *, 'Electrstatic energy', electrostatic_energy(mol)
-print *, 'Van der waals energy', van_der_waals_energy(mol)
-!!
 
 print *, 'Do you want to save the minimized energy configuration (y/n)'
 read (*,*) ans

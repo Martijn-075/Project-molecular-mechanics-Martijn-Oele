@@ -12,54 +12,56 @@ private
 public atom, bond, molecule, read_atom, write_atom, create_molecule, delete_molecule
 
 type atom
-! The element of the atom (in this project only C (carbon) or H (hydrogen))
-character(1) :: element = 'E'
-! The xyz coordinates of the atom in the molecule
-real(realkind) :: cords(3) = 0.
+    ! The element of the atom (in this project only C (carbon) or H (hydrogen))
+    character(1) :: element = 'E'
+    ! The xyz coordinates of the atom in the molecule
+    real(realkind) :: cords(3) = 0.
 end type
 
 type bond
-! The indices of the atoms that are bonding
-integer :: link(2) = 0
-! The type of bond in this project only CC or CH
-character(2) :: type = 'EE'
-! The calculated distance of the bond in (A) angstrom 
-real(realkind) :: length = 0.
-! the vecotr of the bond (3D)
-real(realkind) :: vector(3) = 0.
+    ! The indices of the atoms that are bonding
+    integer :: link(2) = 0
+    ! The type of bond in this project only CC or CH
+    character(2) :: type = 'EE'
+    ! The calculated distance of the bond in (A) angstrom 
+    real(realkind) :: length = 0.
+    ! the vecotr of the bond (3D)
+    real(realkind) :: vector(3) = 0.
 end type
 
 type bond_angle
-! The bonds that have an angle
-type (bond) :: bonds(2)
-! The angle of the bonds
-real(realkind) :: angle = 0.
+    ! The bonds that have an angle
+    type (bond) :: bonds(2)
+    ! The angle of the bonds
+    real(realkind) :: angle = 0.
 end type
 
 type torsion
-! The bonds at the ends (1 and 3) that make the angle
-type (bond) :: end_bonds(2)
-! The central bond that conect the end bonds. In this project always a CC bond
-type (bond) :: center_bond
-! The angle the end bonds make acourding to the newman projection
-real(realkind) :: angle = 0.
+    ! The bonds at the ends (1 and 3) that make the angle
+    type (bond) :: end_bonds(2)
+    ! The central bond that conect the end bonds. In this project always a CC bond
+    type (bond) :: center_bond
+    ! The angle the end bonds make acourding to the newman projection
+    real(realkind) :: angle = 0.
 end type
 
 
 
 type molecule
-! The atoms in the molecule
-type (atom), allocatable :: atoms(:)
-! The bonds in the molecule
-type (bond), allocatable :: bonds(:)
-! The angles between the bonds in the molecule
-type (bond_angle), allocatable :: angles(:)
-! The torsion angles in the molecule
-type (torsion), allocatable :: torsion_angles(:)
-! The distances between all atoms in the molecule
-real(realkind), allocatable :: distance(:,:)
-! Suporting the distance array and holds if two molecules are form a bond
-logical, allocatable :: bonding(:,:)
+    ! The atoms in the molecule
+    type (atom), allocatable :: atoms(:)
+    ! The bonds in the molecule
+    type (bond), allocatable :: bonds(:)
+    ! The angles between the bonds in the molecule
+    type (bond_angle), allocatable :: angles(:)
+    ! The torsion angles in the molecule
+    type (torsion), allocatable :: torsion_angles(:)
+    ! The distances between all atoms in the molecule
+    real(realkind), allocatable :: distance(:,:)
+    ! Suporting the distance array and holds if two molecules are form a bond
+    logical, allocatable :: bonding(:,:)
+    ! The minimized energy of the molecule
+    real(realkind) :: minimized_energy = 0.
 end type
 
 
@@ -124,6 +126,8 @@ do i = 1, size(mol%atoms)
     write(iu,*) mol%atoms(i)
 enddo
 
+write(iu,*)
+write(iu,*) 'Minimized energy', mol%minimized_energy, 'kcal/mol'
 close(iu)
 end subroutine
 
