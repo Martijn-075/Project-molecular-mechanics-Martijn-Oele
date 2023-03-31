@@ -87,6 +87,7 @@ deallocate(mol%bonds)
 deallocate(mol%bonding)
 deallocate(mol%distance)
 deallocate(mol%angles)
+mol%minimized_energy = 0.
 
 end subroutine
 
