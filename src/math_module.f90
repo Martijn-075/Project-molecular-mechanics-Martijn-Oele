@@ -4,7 +4,7 @@
 ! Author: Martijn Oele (GitHub: Martijn-075)
 !
 module math_module
-    use constant_module
+use constant_module
 implicit none
 
 

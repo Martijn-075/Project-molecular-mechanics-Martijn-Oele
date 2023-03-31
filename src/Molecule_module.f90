@@ -108,6 +108,7 @@ if (ios == 0) then
 else
     print *, 'error', ios
 end if
+
 close(iu)
 
 end subroutine read_atom
@@ -129,7 +130,8 @@ enddo
 write(iu,*)
 write(iu,*) 'Minimized energy', mol%minimized_energy, 'kcal/mol'
 close(iu)
-end subroutine
+
+end subroutine write_atom
 
 ! Establishes the bonds between atoms based on distance
 subroutine bonds_atom(mol)
@@ -144,7 +146,7 @@ mol%distance = 0.
 allocate(mol%bonding(size(mol%atoms), size(mol%atoms)))
 mol%bonding = .false.
 
-! Creates the distnace array which is used for cheking if atoms are bonded but also for nonbonding interactions 
+! Creates the distance array which is used for cheking if atoms are bonded but also for nonbonding interactions 
 do i = 1, size(mol%atoms)
     do j = 1, size(mol%atoms)
         mol%distance(j,i) = sqrt((mol%atoms(i)%cords(1) - mol%atoms(j)%cords(1))**2 + &
@@ -242,62 +244,59 @@ integer :: i, j, k, l
 ! If there are 0 bonds over which an torsion angle can be calcualted the subroutine is skipped
 if (count(mol%bonds%type == 'CC') > 0) then
 
-allocate(mol%torsion_angles(count(mol%bonds%type == 'CC') * 9))
-!! look intyo allocating at beggining 
-allocate(end_bonds_holder(3, 2, count(mol%bonds%type == 'CC')))
-allocate(CC_bonds_holder(count(mol%bonds%type == 'CC')))
+    allocate(mol%torsion_angles(count(mol%bonds%type == 'CC') * 9))
+    allocate(end_bonds_holder(3, 2, count(mol%bonds%type == 'CC')))
+    allocate(CC_bonds_holder(count(mol%bonds%type == 'CC')))
 
-! Extracting all the CC (center) bonds
-k = 1
-do i = 1, size(mol%bonds)
-        if (mol%bonds(i)%type == 'CC') then
-            CC_bonds_holder(k) = mol%bonds(i)
-            k = k + 1
-        end if
-enddo
-
-! Getting all the the (2 x 3) (end) bonds of the CC bond per C atom
-do i = 1, size(CC_bonds_holder)
+    ! Extracting all the CC (center) bonds
     k = 1
+    do i = 1, size(mol%bonds)
+            if (mol%bonds(i)%type == 'CC') then
+                CC_bonds_holder(k) = mol%bonds(i)
+                k = k + 1
+            end if
+    enddo
+
+    ! Getting all the the (2 x 3) (end) bonds of the CC bond per C atom
+    do i = 1, size(CC_bonds_holder)
+        k = 1
+        l = 1
+        do j = 1,size(mol%bonds)
+            if ((mol%bonds(j)%link(1) == CC_bonds_holder(i)%link(1) .or. mol%bonds(j)%link(2) == CC_bonds_holder(i)%link(1)) .and. &
+            (mol%bonds(j)%vector(1) /= CC_bonds_holder(i)%vector(1) .or. mol%bonds(j)%vector(2) /= CC_bonds_holder(i)%vector(2))) then
+                end_bonds_holder(k,1,i) = mol%bonds(j)
+                k = k + 1
+            end if
+
+            if ((mol%bonds(j)%link(1) == CC_bonds_holder(i)%link(2) .or. mol%bonds(j)%link(2) == CC_bonds_holder(i)%link(2)) .and. &
+            (mol%bonds(j)%vector(1) /= CC_bonds_holder(i)%vector(1) .or. mol%bonds(j)%vector(2) /= CC_bonds_holder(i)%vector(2))) then
+                end_bonds_holder(l,2,i) = mol%bonds(j)
+                l = l + 1
+            end if
+        enddo
+    enddo
+
+    ! Makking (9) unique end bonds pairs
     l = 1
-    do j = 1,size(mol%bonds)
-        !! can be optimised
-        if ((mol%bonds(j)%link(1) == CC_bonds_holder(i)%link(1) .or. mol%bonds(j)%link(2) == CC_bonds_holder(i)%link(1)) .and. &
-        (mol%bonds(j)%vector(1) /= CC_bonds_holder(i)%vector(1) .or. mol%bonds(j)%vector(2) /= CC_bonds_holder(i)%vector(2))) then
-            end_bonds_holder(k,1,i) = mol%bonds(j)
-            k = k + 1
-        end if
+    do i = 1, size(CC_bonds_holder)
+        do j = 1,3
+            do k = 1,3
+                mol%torsion_angles(l)%center_bond = CC_bonds_holder(i)
+                mol%torsion_angles(l)%end_bonds(1) = end_bonds_holder(j,1,i)
+                mol%torsion_angles(l)%end_bonds(2) = end_bonds_holder(k,2,i)
 
-        if ((mol%bonds(j)%link(1) == CC_bonds_holder(i)%link(2) .or. mol%bonds(j)%link(2) == CC_bonds_holder(i)%link(2)) .and. &
-        (mol%bonds(j)%vector(1) /= CC_bonds_holder(i)%vector(1) .or. mol%bonds(j)%vector(2) /= CC_bonds_holder(i)%vector(2))) then
-            end_bonds_holder(l,2,i) = mol%bonds(j)
-            l = l + 1
-        end if
+                l = l + 1
+            enddo 
+        enddo
     enddo
-enddo
 
-! Makking (9) unique end bonds pairs
-l = 1
-do i = 1, size(CC_bonds_holder)
-    do j = 1,3
-        do k = 1,3
-            mol%torsion_angles(l)%center_bond = CC_bonds_holder(i)
+    ! Calcualting the angle according to the newman projection. Using cros product vectors of the central and each end bond vectors
+    do i = 1, size(mol%torsion_angles)
+        n1 = cross_product(mol%torsion_angles(i)%end_bonds(1)%vector, mol%torsion_angles(i)%center_bond%vector)
+        n2 = cross_product(mol%torsion_angles(i)%end_bonds(2)%vector, mol%torsion_angles(i)%center_bond%vector)
 
-            mol%torsion_angles(l)%end_bonds(1) = end_bonds_holder(j,1,i)
-            mol%torsion_angles(l)%end_bonds(2) = end_bonds_holder(k,2,i)
-
-            l = l + 1
-        enddo 
+        mol%torsion_angles(i)%angle = rad_to_deg(acos(dot_product(n1, n2) / (vector_lenght(n1) * vector_lenght(n2))))
     enddo
-enddo
-
-! Calcualting the angle according to the newman projection 
-do i = 1, size(mol%torsion_angles)
-    n1 = cross_product(mol%torsion_angles(i)%end_bonds(1)%vector, mol%torsion_angles(i)%center_bond%vector)
-    n2 = cross_product(mol%torsion_angles(i)%end_bonds(2)%vector, mol%torsion_angles(i)%center_bond%vector)
-
-    mol%torsion_angles(i)%angle = rad_to_deg(acos(dot_product(n1, n2) / (vector_lenght(n1) * vector_lenght(n2))))
-enddo
 
 end if
 end subroutine angle_torsion

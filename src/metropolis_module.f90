@@ -12,7 +12,6 @@ implicit none
 private
 public random_atom_metropolis, metropolis, minimize_energy
 
-
 contains
 
 ! Moving all the atoms at random whitin a certain radius 
@@ -29,7 +28,6 @@ if (present(r)) then
 else 
     r_local = 0.0001
 end if
-
 
 allocate(q(size(mol%atoms),3))
 
@@ -71,7 +69,7 @@ i = 0
 j = 0
 k = 0
 do while (i < 1000)
-    ! Creating a new moelcule with the atoms randomly moved
+    ! Creating a new molecule with the atoms randomly moved
     old_mol = mol
     call delete_molecule(mol)
     call random_atom_metropolis(mol, r)
@@ -115,7 +113,6 @@ print '(a,x,es13.6,a)', 'Energy reduced by:', energy - starting_energy, ' kcal/m
 print '(a,x,f5.1,a)', 'Energy reduced %:', (energy - starting_energy) / starting_energy * 100, '%'
 print '(a,x,i5)', 'Number of iterations:', j
 print '(a,x,i1)', 'Number of acceptance with higer energy:', k
-
 
 end subroutine metropolis
 

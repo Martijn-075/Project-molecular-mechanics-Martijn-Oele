@@ -13,7 +13,6 @@ private
 public stretch_energy, bending_energy, van_der_waals_energy, electrostatic_energy, torsion_energy, forcefield_energy
 
 
-
 contains
 
 ! The total forcield energy function calling all sub energy functions
@@ -29,6 +28,7 @@ real(realkind) function stretch_energy(mol) result(E)
 type (molecule) :: mol
 real(realkind) :: E_bond, E_sum
 integer :: i
+
 E_sum = 0.
 
 ! Calculating the strech energy for every bond based on the bond type
@@ -38,6 +38,7 @@ do i = 1,size(mol%bonds) - count(mol%bonds%type == 'EE')
     else if (mol%bonds(i)%type == 'CH') then
         E_bond = k_CH * (mol%bonds(i)%length - R_CH)**2
     end if
+
     E_sum = E_sum + E_bond
 enddo
 
@@ -77,13 +78,16 @@ real(realkind) :: E_torsion, E_sum
 integer :: i
 
 E_sum = 0.
+
 ! Checking if there is a CC bond that can function as a centeral bond
+! If CC bond present the torsion energy is calculated
 if (count(mol%bonds%type == 'CC') > 0) then
     do i = 1,size(mol%torsion_angles)
         E_torsion = V2_CC * (1 + cos(deg_to_rad(n_CC * mol%torsion_angles(i)%angle - gamma_CC)))
         E_sum = E_sum + E_torsion
     enddo
 end if
+
 E = E_sum
 
 end function torsion_energy
@@ -109,6 +113,7 @@ do i = 1, size(mol%distance, 1) - 1
         else 
             E_non_bonding = (A_vdw_CH / mol%distance(j,i)**12) - (B_vdw_CH / mol%distance(j,i)**6)
         end if
+
         E_sum = E_sum + E_non_bonding
     enddo
 enddo
@@ -138,6 +143,7 @@ do i = 1, size(mol%distance, 1) - 1
         else 
             E_electrostatic = ((q_H * q_C) / mol%distance(j,i)) * coulombe_constant
         end if
+        
         E_sum = E_sum + E_electrostatic
     enddo
 enddo
