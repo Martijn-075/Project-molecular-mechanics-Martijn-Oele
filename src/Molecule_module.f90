@@ -263,13 +263,15 @@ if (count(mol%bonds%type == 'CC') > 0) then
         l = 1
         do j = 1,size(mol%bonds)
             if ((mol%bonds(j)%link(1) == CC_bonds_holder(i)%link(1) .or. mol%bonds(j)%link(2) == CC_bonds_holder(i)%link(1)) .and. &
-            (mol%bonds(j)%vector(1) /= CC_bonds_holder(i)%vector(1) .or. mol%bonds(j)%vector(2) /= CC_bonds_holder(i)%vector(2))) then
+            (mol%bonds(j)%vector(1) /= CC_bonds_holder(i)%vector(1) .or. mol%bonds(j)%vector(2) /= CC_bonds_holder(i)%vector(2))) &
+            then
                 end_bonds_holder(k,1,i) = mol%bonds(j)
                 k = k + 1
             end if
 
             if ((mol%bonds(j)%link(1) == CC_bonds_holder(i)%link(2) .or. mol%bonds(j)%link(2) == CC_bonds_holder(i)%link(2)) .and. &
-            (mol%bonds(j)%vector(1) /= CC_bonds_holder(i)%vector(1) .or. mol%bonds(j)%vector(2) /= CC_bonds_holder(i)%vector(2))) then
+            (mol%bonds(j)%vector(1) /= CC_bonds_holder(i)%vector(1) .or. mol%bonds(j)%vector(2) /= CC_bonds_holder(i)%vector(2))) & 
+            then
                 end_bonds_holder(l,2,i) = mol%bonds(j)
                 l = l + 1
             end if
